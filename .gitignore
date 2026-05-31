@@ -1,0 +1,17 @@
+# Sistema operativo y editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+
+# Dependencias si se agregan despues
+vendor/
+node_modules/
+
+# Configuracion local sensible si se separa en otro archivo
+.env
