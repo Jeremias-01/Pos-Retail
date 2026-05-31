@@ -3,12 +3,19 @@ session_start();
 
 require_once __DIR__ . '/config/database.php';
 
+function redirectLoginError(string $message): void
+{
+    session_unset();
+    session_destroy();
+    header('Location: login.php?error=' . urlencode($message));
+    exit;
+}
+
 $usuario = trim($_POST['usuario'] ?? '');
 $password = $_POST['password'] ?? '';
 
 if ($usuario === '' || $password === '') {
-    header('Location: login.php?error=Debe ingresar usuario y contraseña');
-    exit;
+    redirectLoginError('Debe ingresar usuario y contrasena');
 }
 
 $sql = "SELECT id, rol_id, nombre, usuario, password_hash, intentos_fallidos, bloqueado, estado
@@ -21,18 +28,15 @@ $stmt->execute(['usuario' => $usuario]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    header('Location: login.php?error=Usuario o contraseña incorrectos');
-    exit;
+    redirectLoginError('Usuario o contrasena incorrectos');
 }
 
 if ((int)$user['estado'] !== 1) {
-    header('Location: login.php?error=Usuario inactivo');
-    exit;
+    redirectLoginError('Usuario inactivo');
 }
 
 if ((int)$user['bloqueado'] === 1) {
-    header('Location: login.php?error=Usuario bloqueado');
-    exit;
+    redirectLoginError('Usuario bloqueado');
 }
 
 if (!password_verify($password, $user['password_hash'])) {
@@ -51,12 +55,10 @@ if (!password_verify($password, $user['password_hash'])) {
     ]);
 
     if ($bloqueado) {
-        header('Location: login.php?error=Usuario bloqueado por superar los intentos permitidos');
-        exit;
+        redirectLoginError('Usuario bloqueado por superar los intentos permitidos');
     }
 
-    header('Location: login.php?error=Usuario o contraseña incorrectos');
-    exit;
+    redirectLoginError('Usuario o contrasena incorrectos');
 }
 
 $update = $pdo->prepare("UPDATE usuarios
@@ -64,6 +66,7 @@ $update = $pdo->prepare("UPDATE usuarios
                          WHERE id = :id");
 $update->execute(['id' => $user['id']]);
 
+session_regenerate_id(true);
 $_SESSION['usuario_id'] = $user['id'];
 $_SESSION['usuario_nombre'] = $user['nombre'];
 $_SESSION['rol_id'] = $user['rol_id'];
